@@ -1,0 +1,198 @@
+package testBase.listners;
+
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import javax.imageio.ImageIO;
+
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.MultiPartEmail;
+import org.testng.ISuite;
+import org.testng.ISuiteResult;
+import org.testng.ITestContext;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.aventstack.extentreports.reporter.configuration.Theme;
+import com.aventstack.extentreports.reporter.configuration.ViewName;
+
+import testBase.TestData;
+import testBase.ThreadUtils;
+
+public final class ExtentReportNG {
+	private ExtentReportNG() {
+	}
+	
+//	static ExtentReports extent;
+	static String width;
+	static String height;
+	
+	private static long exeStartTime;
+	private static long exeEndTime;
+
+	private static long getExeStartTime() {
+		return exeStartTime;
+	}
+
+	private static void setExeStartTime(long exeStartTimeParam) {
+		exeStartTime = exeStartTimeParam;
+	}
+
+	private static long getExeEndTime() {
+		return exeEndTime;
+	}
+
+	private static void setExeEndTime(long exeEndTimeParam) {
+		exeEndTime = exeEndTimeParam;
+	}
+
+	public static ExtentReports setupExtentReport(String suitName) {
+		setExeStartTime(System.currentTimeMillis());
+		getCurrentScreenResolution();
+		
+		String reportDir = System.getProperty("user.dir") + File.separator + "Reports" ;
+		
+		
+		String reportPath = reportDir + File.separator + suitName + ".html";
+		ThreadUtils.setExtentReportPath(reportPath);
+		System.out.println("reportPath " + ThreadUtils.getExtentReportPath());
+		ExtentSparkReporter sparkReport = new ExtentSparkReporter(reportPath);
+		
+		ExtentReports extent = new ExtentReports();
+		extent.attachReporter(sparkReport);
+		extent.setSystemInfo("Executed on OS: ", System.getProperty("os.name"));
+		extent.setSystemInfo("Resolution: ", width + " x " + height);
+		
+		sparkReport.viewConfigurer().viewOrder().as(new ViewName[] {ViewName.DASHBOARD,  ViewName.TEST, ViewName.CATEGORY}).apply();
+		sparkReport.config().setDocumentTitle(suitName);
+		sparkReport.config().setReportName(suitName);
+		sparkReport.config().setTheme(Theme.STANDARD);
+		sparkReport.config().thumbnailForBase64(true);
+		sparkReport.config().setTimelineEnabled(true);
+		reportCustomize(sparkReport);
+		
+		return extent;
+	}
+	
+	private static void getCurrentScreenResolution() {
+//		DisplayMode size =GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
+		width = "a"; //String.valueOf(size.getWidth());
+		height = "b"; //String.valueOf(size.getHeight());
+	}
+	
+	private static void reportCustomize(ExtentSparkReporter sparkReport)  {
+
+//		String base64LogoImage = "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UmVhZHlxyWU8AAADKGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxMTEgNzkuMTU4MzI1LCAyMDE1LzA5LzEwLTAxOjEwOjIwICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNSAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpDM0MyRTZCNjhEMjIxMUU4OTE2QkM0MzAzODY2QThFNCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpDM0MyRTZCNzhEMjIxMUU4OTE2QkM0MzAzODY2QThFNCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkMzQzJFNkI0OEQyMjExRTg5MTZCQzQzMDM4NjZBOEU0IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkMzQzJFNkI1OEQyMjExRTg5MTZCQzQzMDM4NjZBOEU0Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+3krjBAAAAaFJREFUeNrkVj9Lw0AUv3eXNPaPWBxSSidFRNQPUEQHdXDxSwg6CG6OTn4B0cGlX0Rw0t3BFkfp4NKl1lZpQnJJnhdPSqmCh74K4hGS3CO8x3u/Pxe4qcyycS7OxrzGXsAy+QisjH5iFGAc5eYW1bv/0GSxJOoAgCVJ4nVRBsWt7ZnaWX5thcUhWQdp9tATRdfd2y3v7/BCHoNQBRkXNAWSKMzOL1eOj4rrq2qLaUjdgAxkwKRQrersTCcWPJ0bJYs4H90iErLI7t/WW6c1TGLgkFKocQdCoEENMFEy2A4GXuS3Bx1b2WlwcopURCxCFPkp260ofEEhAhh7LxhIshEpfU1ubJYPD2IZKWjVcFon573LC0odWG4pt7QwCNhu6U0HnEzJGEqtAA0rSklqdjjIPBz5U3YNhjHCDoDSi0YB0BEzGIzPgy8jP2YR+2UWAaldGw+EbkQMP0P++yP6eLygWX5Ds1MO7TjD2tJbwgIs6jz5980ktet0yc4j40BWAKyJ5+srv1F/bwKZ7HZBZNDgx8vwwAnVFfR7//Ln91WAAQA8uqLIq2ufcwAAAABJRU5ErkJggg==";
+		String base64LogoImage = TestData.getCompanyLogo();
+		try {
+			byte[] bytes = Base64.getDecoder().decode(base64LogoImage);
+			BufferedImage inputImage = ImageIO.read(new ByteArrayInputStream(bytes));
+			BufferedImage outputImage = resize(inputImage, 30, 30);
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			ImageIO.write(outputImage, "png", os);
+			base64LogoImage = Base64.getEncoder().encodeToString(os.toByteArray());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		sparkReport.config().setJs(
+		          "document.getElementsByClassName('col-md-6')[0].style.setProperty('min-inline-size','-webkit-fill-available');"
+				+ "document.getElementsByClassName('col-md-6')[1].style.setProperty('display','none');"
+//				+ "document.getElementsByClassName('col-md-4')[2].style.setProperty('display','none');"
+				+ "document.getElementsByClassName('col-lg-6 col-md-12 sysenv-container')[0].style.setProperty('min-inline-size','-webkit-fill-available');"
+				+ "document.getElementsByClassName('logo')[0].style.setProperty(\"background-image\", \"url('data:image/png;base64," + base64LogoImage+"')\");"
+				);
+		
+//		sparkReport.config().setJs(
+//		          "document.getElementsByClassName('col-md-4')[0].style.setProperty('min-inline-size','-webkit-fill-available');"
+//				+ "document.getElementsByClassName('col-md-4')[1].style.setProperty('display','none');"
+//				+ "document.getElementsByClassName('col-md-4')[2].style.setProperty('display','none');"
+//				+ "document.getElementsByClassName('col-lg-6 col-md-12 sysenv-container')[0].style.setProperty('min-inline-size','-webkit-fill-available');"
+//				+ "document.getElementsByClassName('logo')[0].style.setProperty(\"background-image\", \"url('data:image/png;base64," + base64+"')\");"
+//				);
+	}
+	
+	
+	 private static BufferedImage resize(BufferedImage inputImage, int newWidth, int newHeight) {
+	        Image tmp = inputImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+	        BufferedImage outputImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+
+	        Graphics2D g2d = outputImage.createGraphics();
+	        g2d.drawImage(tmp, 0, 0, null);
+	        g2d.dispose();
+
+	        return outputImage;
+	}
+	
+	
+	public static void sendEmailWithAttachment(ISuite suite) throws EmailException {
+		String suiteName = suite.getXmlSuite().getTests().get(0).getClasses().get(0).getName();
+		suiteName =  suite.getName().equalsIgnoreCase("Default Suite") ? suiteName.substring(suiteName.lastIndexOf(".") + 1) : suite.getName();
+		
+		// Create the attachment
+		String filePath = System.getProperty("user.dir") + File.separator + "Reports" + File.separator + suiteName + ".html";
+		 
+		File file =new File(filePath);
+  
+		MultiPartEmail email = new MultiPartEmail();
+		
+		ITestContext tc = null;
+		int pass = 0;
+		int fail = 0;
+		int skip = 0; 
+		
+	    Map<String, ISuiteResult> suiteResults = suite.getResults();
+		for (ISuiteResult sr : suiteResults.values()) {
+			tc = sr.getTestContext();
+			pass = pass + tc.getPassedTests().getAllResults().size();
+			fail = fail + tc.getFailedTests().getAllResults().size();
+			skip = skip + tc.getSkippedTests().getAllResults().size();
+		}
+		
+		setExeEndTime(System.currentTimeMillis());
+		
+		email.setHostName("smtp.gmail.com");
+		email.setSmtpPort(465);
+		email.setSSLOnConnect(true);
+		email.setAuthentication("<SMTP_USERNAME>", "<SMTP_PASSWORD>");
+		email.setFrom("<SENDER_EMAIL>");
+		email.setSubject(suiteName + " - Execution results");
+		email.setMsg("Detailed Execution results \n"
+		  			
+			  		+ "\n"
+			  
+			  		+ "Execution Plan : " + suiteName + "\n"
+			  		+ "Execution Type : " + (suite.getParallel().equalsIgnoreCase("none") ? "Sequence" : ("Parallel : "+suite.getParallel())) + "\n"
+	  				+ "Executed By    : "+ System.getProperty("user.name") + "\n"
+	  				
+	  				+ "\n"
+	  				
+	  				+ "Test Results summary " + "\n"
+	  				+ "Total Test Cases : " + pass + fail + skip + "\n"
+	  				+ "Passed  : " + pass + "\n"
+	  				+ "Failed  : " + fail + "\n"
+	  				+ "Skipped : " + skip + "\n"
+	  				+ "Total Execution Time : " + getExecutionTime(getExeStartTime(), getExeEndTime()) + "\n"
+				
+				);
+		email.attach(file);
+//		email.send();
+		  
+		System.out.println("Email sent with Report " + suiteName + ".html Attached");
+	}
+	
+	private static String getExecutionTime(long startTime, long endTime) {
+		
+		long totalTime = Math.abs(startTime - endTime);
+		return TimeUnit.MILLISECONDS.toHours(totalTime) + " hr "
+				+ TimeUnit.MILLISECONDS.toMinutes(totalTime) + " min "
+						+ TimeUnit.MILLISECONDS.toSeconds(totalTime) + " sec ";
+    }
+}

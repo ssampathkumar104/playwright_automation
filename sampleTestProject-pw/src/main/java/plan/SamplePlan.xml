@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="SamplePlan">
+
+
+	<parameter name="browserName" value="chrome" />
+	<parameter name="implicitlyWaitTime" value="15" />
+	<parameter name="pageLoadTimeout" value="120" />
+	<parameter name="scriptTimeout" value="30" />
+	<parameter name="recordVideo" value="true" />
+	<parameter name="generateDocument" value="docx" />
+	<parameter name="viewportSize" value="1920,1080" />
+
+	<test name="SampleTest">
+		<classes>
+			<class name="scripts.SampleTest" />
+		</classes>
+	</test>
+	
+</suite>

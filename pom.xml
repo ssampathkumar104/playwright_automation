@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.company.testautomation</groupId>
+	<artifactId>script-base</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Central Testscripts</name>
+	<!-- Run this on bash to update modules for d in */ ; do echo "<module>$d</module>" 
+		done -->
+	<profiles>
+		<profile>
+			<id>companyCQATestCS</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>companyTestAutomation</module>
+				<module>sampleTestProject</module>
+				<!--<module>inforTestAutomation-pw</module>
+				<module>test-reporting-api</module>
+				<module>testReportingPortal</module>-->
+			</modules>
+		</profile>
+	</profiles>
+
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>s3-wagon</id>
+			<url>s3://companycqalibraries-ramya/companyCQAReleases/</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+		<repository>
+			<id>s3-wagon</id>
+			<url>s3://companycqalibraries-ramya/companyCQASnapshot/</url>
+		</repository>
+	</distributionManagement>
+
+	<build>
+		<plugins>
+		</plugins>
+		<extensions>
+			<extension>
+				<groupId>com.github.platform-team</groupId>
+				<artifactId>aws-maven</artifactId>
+				<!-- <version>6.0.0</version> -->
+			</extension>
+		</extensions>
+	</build>
+
+</project>

@@ -1,0 +1,151 @@
+services:
+  selenium-event-bus:
+    image: selenium/event-bus:4.38.0-20251025
+    container_name: selenium-event-bus
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "5557:5557"
+
+  selenium-sessions:
+    image: selenium/sessions:4.38.0-20251025
+    container_name: selenium-sessions
+    ports:
+      - "5556:5556"
+    depends_on:
+      - selenium-event-bus
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_BIND_HOST=false
+
+  selenium-session-queue:
+    image: selenium/session-queue:4.38.0-20251025
+    container_name: selenium-session-queue
+    ports:
+      - "5559:5559"
+    depends_on:
+      - selenium-event-bus
+    environment:
+      - SE_BIND_HOST=false
+
+  selenium-distributor:
+    image: selenium/distributor:4.38.0-20251025
+    container_name: selenium-distributor
+    ports:
+      - "5553:5553"
+    depends_on:
+      - selenium-event-bus
+      - selenium-sessions
+      - selenium-session-queue
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_SESSIONS_MAP_HOST=selenium-sessions
+      - SE_SESSIONS_MAP_PORT=5556
+      - SE_SESSION_QUEUE_HOST=selenium-session-queue
+      - SE_SESSION_QUEUE_PORT=5559
+      - SE_BIND_HOST=false
+      - SE_NODE_SESSION_TIMEOUT=300
+
+  selenium-router:
+    image: selenium/router:4.38.0-20251025
+    container_name: selenium-router
+    ports:
+      - "4444:4444"
+    depends_on:
+      - selenium-distributor
+      - selenium-sessions
+      - selenium-session-queue
+      - selenium-event-bus
+    environment:
+      - SE_DISTRIBUTOR_HOST=selenium-distributor
+      - SE_DISTRIBUTOR_PORT=5553
+      - SE_SESSIONS_MAP_HOST=selenium-sessions
+      - SE_SESSIONS_MAP_PORT=5556
+      - SE_SESSION_QUEUE_HOST=selenium-session-queue
+      - SE_SESSION_QUEUE_PORT=5559
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_BIND_HOST=false
+
+  ChromeService1:
+    image: selenium/node-chrome:4.38.0-20251025
+    platform: linux/amd64
+    container_name: ChromeService1
+    user: root
+    shm_size: 2gb
+    ports:
+      - "1001:7900"
+    depends_on:
+      - selenium-event-bus
+      - selenium-router
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_GRID_URL=http://localhost:4444
+      - SE_NODE_MAX_SESSIONS=1
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SE_BIND_HOST=false
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  ChromeService2:
+    image: selenium/node-chrome:4.38.0-20251025
+    platform: linux/amd64
+    container_name: ChromeService2
+    user: root
+    shm_size: 2gb
+    ports:
+      - "1002:7900"
+    depends_on:
+      - selenium-event-bus
+      - selenium-router
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_GRID_URL=http://localhost:4444
+      - SE_NODE_MAX_SESSIONS=1
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SE_BIND_HOST=false
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  ChromeService3:
+    image: selenium/node-chrome:4.38.0-20251025
+    platform: linux/amd64
+    container_name: ChromeService3
+    user: root
+    shm_size: 2gb
+    ports:
+      - "1003:7900"
+    depends_on:
+      - selenium-event-bus
+      - selenium-router
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_GRID_URL=http://localhost:4444
+      - SE_NODE_MAX_SESSIONS=1
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SE_BIND_HOST=false
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
